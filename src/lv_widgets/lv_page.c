@@ -923,13 +923,26 @@ static lv_res_t lv_page_scrollable_signal(lv_obj_t * scrl, lv_signal_t sign, voi
     lv_page_ext_t * page_ext      = lv_obj_get_ext_attr(page);
 
     if(sign == LV_SIGNAL_COORD_CHG) {
+        lv_page_ext_t * parent_ext;
         lv_obj_t * page_parent = lv_obj_get_parent(page);
 
         /*Handle scroll propagation*/
         lv_indev_t * indev = lv_indev_get_act();
         if(page_ext->scroll_prop  && indev) {
             lv_point_t * drag_sum = &indev->proc.types.pointer.drag_sum;
-            lv_page_ext_t * parent_ext = lv_obj_get_ext_attr(lv_obj_get_parent(page_parent));
+            while (page_parent) {
+                lv_obj_t *temp_parent;
+                if (!lv_obj_get_hidden(page_parent) &&
+                    lv_obj_get_drag(page_parent) &&
+                    !lv_obj_get_drag_parent(page_parent))
+                    break;
+                temp_parent = lv_obj_get_parent(page_parent);
+                if (temp_parent == NULL)
+                    break;
+                else
+                    page_parent = temp_parent;
+            }
+            parent_ext = lv_obj_get_ext_attr(lv_obj_get_parent(page_parent)); /*Fetch page with page scrollable.*/
             if(parent_ext->scroll_prop_obj == NULL) {
                 /*If the dragging just started or scroll is already propagated to this object
                  *  enable the scroll propagation if the conditions are met*/
